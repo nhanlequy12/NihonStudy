@@ -56,7 +56,7 @@ export default function Saved() {
       )}
 
       <div className="card row spread mt">
-        <div className="small muted">Dữ liệu học được lưu trong trình duyệt này (localStorage).</div>
+        <div className="small muted">Dữ liệu học được lưu trên máy này và đồng bộ lên tài khoản (nếu đã bật Firebase).</div>
         {confirmReset ? (
           <div className="row">
             <span className="small">Xóa toàn bộ tiến độ?</span>

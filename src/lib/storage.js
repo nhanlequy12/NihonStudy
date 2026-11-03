@@ -27,10 +27,26 @@ function load() {
 
 let state = load()
 const listeners = new Set()
+const changeHooks = new Set() // nhận thông báo mỗi khi state đổi do người dùng (để đồng bộ cloud)
 
-function emit() {
+function emit(fromRemote = false) {
   try { localStorage.setItem(KEY, JSON.stringify(state)) } catch { /* ignore */ }
   listeners.forEach((l) => l())
+  if (!fromRemote) changeHooks.forEach((h) => h(state))
+}
+
+/** Đăng ký hàm được gọi khi state thay đổi cục bộ. Trả về hàm hủy. */
+export function onLocalChange(h) { changeHooks.add(h); return () => changeHooks.delete(h) }
+
+/** Thay toàn bộ state bằng dữ liệu từ cloud (không kích hoạt đồng bộ ngược). */
+export function replaceState(next) {
+  state = { ...defaultState, ...next, settings: { ...defaultState.settings, ...(next?.settings || {}) } }
+  emit(true)
+}
+
+export function pickSyncable(s) {
+  const { saved, srs, learnedTopics, quizHistory, readingDone, listeningDone, streak, settings } = s
+  return { saved, srs, learnedTopics, quizHistory, readingDone, listeningDone, streak, settings }
 }
 
 export function getState() { return state }

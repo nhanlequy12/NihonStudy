@@ -11,6 +11,7 @@
     "data:jtest": "node scripts/scrape-jtest.mjs 1 12 && node scripts/convert-jtest.mjs out-1-12.json src/data/jtest-n2.json"
   },
   "dependencies": {
+    "firebase": "^13.2.0",
     "react": "^19.3.1",
     "react-dom": "^19.3.1",
     "react-router-dom": "^7.18.5"

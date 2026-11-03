@@ -3,6 +3,7 @@ import { useEffect } from 'react'
 import { useStore, updateSettings } from '../lib/storage'
 import { dueCount } from '../lib/srs'
 import { allWords } from '../data/vocab'
+import AccountBox from './AccountBox'
 
 const nav = [
   { to: '/', label: 'Tổng quan', ico: '🏠', end: true },
@@ -67,6 +68,7 @@ export default function Layout() {
           </NavLink>
         ))}
         <div className="sidebar-footer">
+          <AccountBox />
           <div>🔥 Chuỗi ngày học: <b>{s.streak.count}</b></div>
           <button className="btn btn-sm" onClick={cycleTheme}>
             Giao diện: {s.settings.theme === 'auto' ? 'Tự động' : s.settings.theme === 'dark' ? 'Tối' : 'Sáng'}
@@ -80,6 +82,7 @@ export default function Layout() {
           <div className="brand-name">NihonStudy</div>
         </div>
         <span className="chip" style={{ marginLeft: 'auto' }}>🔥 {s.streak.count}</span>
+        <AccountBox compact />
         <button className="btn btn-sm btn-ghost" onClick={cycleTheme}>{s.settings.theme === 'dark' ? '🌙' : s.settings.theme === 'light' ? '☀️' : '🌓'}</button>
       </header>
 
