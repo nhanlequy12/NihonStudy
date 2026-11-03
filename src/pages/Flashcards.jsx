@@ -1,11 +1,12 @@
 import { useMemo, useState, useEffect } from 'react'
 import { useSearchParams, Link } from 'react-router-dom'
-import { topics, allWords, topicById } from '../data/vocab'
+import { allWords, topicById, wordsFor } from '../data/vocab'
 import { useStore } from '../lib/storage'
 import { review, isDue, getCard } from '../lib/srs'
 import { speak } from '../lib/tts'
 import { shuffle } from '../lib/utils'
-import { SaveButton } from '../components/WordCard'
+import { SaveButton, sayWord, RelatedWords } from '../components/WordCard'
+import TopicSelect from '../components/TopicSelect'
 
 const MODES = [
   { id: 'due', label: 'Đến hạn ôn' },
@@ -27,7 +28,7 @@ export default function Flashcards() {
   const [started, setStarted] = useState(false)
 
   const pool = useMemo(() => {
-    const base = topicId === 'all' ? allWords : topicById[topicId]?.words || []
+    const base = wordsFor(topicId)
     if (mode === 'saved') return base.filter((w) => s.saved.includes(w.id))
     if (mode === 'new') return base.filter((w) => !s.srs[w.id])
     if (mode === 'due') return base.filter((w) => s.srs[w.id] && isDue(w.id))
@@ -43,7 +44,7 @@ export default function Flashcards() {
   }
 
   const current = queue[i]
-  useEffect(() => { if (current && front === 'jp') speak(current.word, { rate: s.settings.rate }) }, [current, front]) // eslint-disable-line
+  useEffect(() => { if (current && front === 'jp') sayWord(current, s.settings.rate) }, [current, front]) // eslint-disable-line
 
   const grade = (g) => {
     review(current.id, g)
@@ -84,10 +85,7 @@ export default function Flashcards() {
         <div className="card stack">
           <div className="row" style={{ gap: 16 }}>
             <label className="stack" style={{ gap: 4 }}><span className="tiny muted">Chủ đề</span>
-              <select className="select" value={topicId} onChange={(e) => set('topic', e.target.value)}>
-                <option value="all">Tất cả chủ đề</option>
-                {topics.map((t) => <option key={t.id} value={t.id}>{t.icon} {t.title}</option>)}
-              </select>
+              <TopicSelect value={topicId} onChange={(v) => set('topic', v)} />
             </label>
             <label className="stack" style={{ gap: 4 }}><span className="tiny muted">Chọn thẻ</span>
               <select className="select" value={mode} onChange={(e) => set('mode', e.target.value)}>
@@ -136,18 +134,18 @@ export default function Flashcards() {
             {frontJp ? (
               <>
                 <div className="flashcard-word">{w.word}</div>
-                <div className="flashcard-hint">{w.pos} · nhấn để xem nghĩa</div>
+                <div className="flashcard-hint">{w.pos ? w.pos + ' · ' : ''}nhấn để xem nghĩa</div>
               </>
             ) : (
               <>
                 <div style={{ fontSize: 24, fontWeight: 600 }}>{w.meaning}</div>
-                <div className="flashcard-hint">{w.pos} · nghĩ từ tiếng Nhật rồi nhấn để kiểm tra</div>
+                <div className="flashcard-hint">{w.pos ? w.pos + ' · ' : ''}nghĩ từ tiếng Nhật rồi nhấn để kiểm tra</div>
               </>
             )}
           </div>
           <div className="flashcard-face flashcard-back">
-            <div className="flashcard-word" style={{ fontSize: 34 }}>{w.word}</div>
-            <div className="word-reading" style={{ fontSize: 18 }}>{w.reading}</div>
+            <div className="flashcard-word" style={{ fontSize: 34 }}>{w.word}{w.note && <span className="muted" style={{ fontSize: 16, fontWeight: 400 }}>（{w.note}）</span>}</div>
+            {w.reading !== w.word && <div className="word-reading" style={{ fontSize: 18 }}>{w.reading}</div>}
             <div style={{ fontSize: 18, fontWeight: 600 }}>{w.meaning}</div>
             <div className="example" style={{ width: '100%', textAlign: 'left' }}>
               <span className="example-jp">{w.examples[0].jp}</span>
@@ -158,12 +156,13 @@ export default function Flashcards() {
       </div>
 
       <div className="row" style={{ justifyContent: 'center' }}>
-        <button className="btn btn-sm" onClick={() => speak(w.word, { rate: s.settings.rate })}>🔊 Từ</button>
+        <button className="btn btn-sm" onClick={() => sayWord(w, s.settings.rate)}>🔊 Từ</button>
         <button className="btn btn-sm" onClick={() => speak(w.examples[0].jp, { rate: s.settings.rate })}>🔊 Ví dụ</button>
         <SaveButton id={w.id} />
         <span className="tiny muted">lần ôn: {card.reps} · khoảng cách: {card.interval}d</span>
       </div>
 
+      {flipped && w.related?.length > 0 && <div className="row" style={{ justifyContent: 'center' }}><RelatedWords related={w.related} rate={s.settings.rate} /></div>}
       {flipped ? (
         <div className="grade-row">
           <button className="btn btn-danger" onClick={() => grade(0)}>Quên<small>&lt; 10 phút</small></button>

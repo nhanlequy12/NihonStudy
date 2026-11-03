@@ -1,11 +1,12 @@
 import { useMemo, useState, useEffect, useRef } from 'react'
 import { useSearchParams } from 'react-router-dom'
-import { topics, allWords, topicById } from '../data/vocab'
+import { allWords, wordsFor } from '../data/vocab'
 import { useStore, addQuizResult, toggleSaved } from '../lib/storage'
 import { review } from '../lib/srs'
 import { speak } from '../lib/tts'
 import { shuffle, sample, normalizeJa, blankOut } from '../lib/utils'
-import { SaveButton } from '../components/WordCard'
+import { SaveButton, sayWord } from '../components/WordCard'
+import TopicSelect from '../components/TopicSelect'
 
 const MODES = [
   { id: 'vi2jp', label: 'Việt → Nhật (viết)', desc: 'Nhìn nghĩa tiếng Việt, gõ từ tiếng Nhật (kanji hoặc hiragana).' },
@@ -16,12 +17,19 @@ const MODES = [
   { id: 'reading', label: 'Cách đọc (漢字 → かな)', desc: 'Chọn cách đọc đúng của từ kanji.' },
 ]
 
+function answersOf(w) {
+  const a = [w.word, w.reading]
+  if (w.note) a.push(w.word + w.note, w.reading + w.note)
+  return a
+}
+
 function buildQuestion(w, mode, pool) {
-  const others = sample(pool.filter((x) => x.id !== w.id), 3)
+  // tránh đáp án nhiễu trùng nghĩa/từ
+  const others = sample(pool.filter((x) => x.id !== w.id && x.word !== w.word && x.meaning !== w.meaning), 3)
   const ex = w.examples[Math.floor(Math.random() * w.examples.length)]
   switch (mode) {
-    case 'vi2jp': return { w, mode, prompt: w.meaning, hint: w.pos, answers: [w.word, w.reading], ex }
-    case 'fill': return { w, mode, prompt: blankOut(ex.jp, w.word), sub: ex.vi, hint: w.meaning, answers: [w.word, w.reading], ex }
+    case 'vi2jp': return { w, mode, prompt: w.meaning, hint: w.pos || (w.note ? `+${w.note}` : ''), answers: answersOf(w), ex }
+    case 'fill': return { w, mode, prompt: blankOut(ex.jp, w.word), sub: ex.vi, hint: w.meaning, answers: answersOf(w), ex }
     case 'sentence': return { w, mode, prompt: ex.vi, hint: `Dùng từ: ${w.word}`, target: ex.jp, ex }
     case 'mc-vi2jp': return { w, mode, prompt: w.meaning, options: shuffle([w, ...others]).map((x) => ({ id: x.id, label: x.word, sub: x.reading })), correct: w.id, ex }
     case 'mc-jp2vi': return { w, mode, prompt: w.word, sub: w.reading, options: shuffle([w, ...others]).map((x) => ({ id: x.id, label: x.meaning })), correct: w.id, ex }
@@ -58,7 +66,7 @@ export default function Quiz() {
 
   const pool = useMemo(() => {
     if (topicId === 'saved') return allWords.filter((w) => s.saved.includes(w.id))
-    return topicId === 'all' ? allWords : topicById[topicId]?.words || []
+    return wordsFor(topicId)
   }, [topicId, s.saved])
 
   const start = () => {
@@ -70,7 +78,7 @@ export default function Quiz() {
 
   const q = qs[i]
   useEffect(() => { if (q && !result) inputRef.current?.focus() }, [i, q, result])
-  useEffect(() => { if (q && q.mode === 'mc-jp2vi') speak(q.w.word, { rate: s.settings.rate }) }, [q]) // eslint-disable-line
+  useEffect(() => { if (q && q.mode === 'mc-jp2vi') sayWord(q.w, s.settings.rate) }, [q]) // eslint-disable-line
 
   const finish = (ok) => {
     setResult(ok)
@@ -144,11 +152,7 @@ export default function Quiz() {
         <div className="card stack">
           <div className="row" style={{ gap: 16 }}>
             <label className="stack" style={{ gap: 4 }}><span className="tiny muted">Nguồn từ</span>
-              <select className="select" value={topicId} onChange={(e) => { const p = new URLSearchParams(params); p.set('topic', e.target.value); setParams(p) }}>
-                <option value="all">Tất cả chủ đề</option>
-                <option value="saved">🔖 Từ đã lưu ({s.saved.length})</option>
-                {topics.map((t) => <option key={t.id} value={t.id}>{t.icon} {t.title}</option>)}
-              </select>
+              <TopicSelect value={topicId} savedCount={s.saved.length} onChange={(v) => { const p = new URLSearchParams(params); p.set('topic', v); setParams(p) }} />
             </label>
             <label className="stack" style={{ gap: 4 }}><span className="tiny muted">Số câu</span>
               <select className="select" value={count} onChange={(e) => setCount(Number(e.target.value))}>
@@ -243,7 +247,7 @@ export default function Quiz() {
               {q.mode === 'sentence' ? (
                 <div className="jp" style={{ fontSize: 18, marginTop: 4 }}>{q.target}</div>
               ) : (
-                <div className="jp" style={{ fontSize: 20, marginTop: 4 }}>{q.w.word} <span className="small">【{q.w.reading}】</span> — <span style={{ fontSize: 15 }}>{q.w.meaning}</span></div>
+                <div className="jp" style={{ fontSize: 20, marginTop: 4 }}>{q.w.word}{q.w.note ? `（${q.w.note}）` : ''} {q.w.reading !== q.w.word && <span className="small">【{q.w.reading}】</span>} — <span style={{ fontSize: 15 }}>{q.w.meaning}</span></div>
               )}
             </div>
             <div className="example">

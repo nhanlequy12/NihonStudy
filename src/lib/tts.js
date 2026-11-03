@@ -93,3 +93,18 @@ export function listenOnce({ onStart } = {}) {
     try { rec.start() } catch { resolve('') }
   })
 }
+
+// ---- Audio file (mp3) ----
+let currentAudio = null
+/** Phát file âm thanh; reject nếu lỗi tải để nơi gọi fallback sang TTS. */
+export function playAudio(url) {
+  return new Promise((resolve, reject) => {
+    stopSpeaking()
+    if (currentAudio) { currentAudio.pause(); currentAudio = null }
+    const a = new Audio(url)
+    currentAudio = a
+    a.onended = () => resolve(true)
+    a.onerror = () => reject(new Error('audio error'))
+    a.play().catch(reject)
+  })
+}

@@ -1,6 +1,6 @@
-import { useParams, Link, useNavigate } from 'react-router-dom'
+import { useParams, Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { useState } from 'react'
-import { topicById } from '../data/vocab'
+import { topicById, groupById } from '../data/vocab'
 import WordCard from '../components/WordCard'
 import { useStore, updateSettings } from '../lib/storage'
 import { speakLines, stopSpeaking } from '../lib/tts'
@@ -10,7 +10,8 @@ export default function TopicDetail() {
   const t = topicById[id]
   const s = useStore()
   const nav = useNavigate()
-  const [filter, setFilter] = useState('')
+  const [params] = useSearchParams()
+  const [filter, setFilter] = useState(params.get('q') || '')
   const [playing, setPlaying] = useState(false)
 
   if (!t) return <div className="empty">Không tìm thấy chủ đề. <Link to="/topics">Quay lại</Link></div>
@@ -31,7 +32,7 @@ export default function TopicDetail() {
     <div className="stack" style={{ gap: 18 }}>
       <div className="page-header">
         <div>
-          <Link to="/topics" className="small muted">← Tất cả chủ đề</Link>
+          <Link to="/topics" className="small muted">← Tất cả chủ đề{groupById[t.group] && groupById[t.group].id !== 'basic' ? ` · ${groupById[t.group].title}` : ''}</Link>
           <h1 className="page-title">{t.icon} {t.title} <span className="jp muted" style={{ fontSize: 16, fontWeight: 400 }}>{t.jp}</span></h1>
           <p className="page-sub">{t.words.length} từ · Nhấn 🔊 để nghe, 🔖 để lưu từ chưa biết.</p>
         </div>

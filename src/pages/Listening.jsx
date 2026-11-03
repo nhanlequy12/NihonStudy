@@ -1,10 +1,11 @@
 import { useState, useMemo, useRef, useEffect } from 'react'
 import { listenings } from '../data/listening'
-import { allWords, topics, topicById } from '../data/vocab'
+import { allWords, wordsFor } from '../data/vocab'
 import { useStore, setListeningDone, addQuizResult, updateSettings, toggleSaved } from '../lib/storage'
 import { speak, speakLines, stopSpeaking, ttsSupported } from '../lib/tts'
 import { shuffle, sample, normalizeJa } from '../lib/utils'
 import { SaveButton } from '../components/WordCard'
+import TopicSelect from '../components/TopicSelect'
 
 function RateControl() {
   const s = useStore()
@@ -31,7 +32,7 @@ function SentenceDrill() {
   const [plays, setPlays] = useState(0)
   const inputRef = useRef()
 
-  const pool = useMemo(() => (topicId === 'all' ? allWords : topicById[topicId].words), [topicId])
+  const pool = useMemo(() => (topicId === 'saved' ? allWords.filter((w) => s.saved.includes(w.id)) : wordsFor(topicId)), [topicId, s.saved])
 
   const start = () => {
     const words = sample(pool, 8)
@@ -72,15 +73,12 @@ function SentenceDrill() {
           <RateControl />
         </div>
         <div className="row">
-          <select className="select" value={topicId} onChange={(e) => setTopicId(e.target.value)}>
-            <option value="all">Tất cả chủ đề</option>
-            {topics.map((t) => <option key={t.id} value={t.id}>{t.icon} {t.title}</option>)}
-          </select>
+          <TopicSelect value={topicId} savedCount={s.saved.length} onChange={setTopicId} />
           <select className="select" value={kind} onChange={(e) => setKind(e.target.value)}>
             <option value="meaning">Nghe → chọn nghĩa tiếng Việt</option>
             <option value="dictation">Nghe → chép lại (chính tả)</option>
           </select>
-          <button className="btn btn-primary" onClick={start}>Bắt đầu 8 câu →</button>
+          <button className="btn btn-primary" disabled={pool.length < 1} onClick={start}>Bắt đầu 8 câu →</button>
         </div>
       </div>
     )
@@ -124,7 +122,7 @@ function SentenceDrill() {
           </div>
           <div className="row spread">
             <div className="row">
-              <span className="chip chip-primary jp">{q.w.word}【{q.w.reading}】 {q.w.meaning}</span>
+              <span className="chip chip-primary jp">{q.w.word}{q.w.reading !== q.w.word ? `【${q.w.reading}】` : ''} {q.w.meaning}</span>
               <SaveButton id={q.w.id} />
             </div>
             <button className="btn btn-primary" onClick={next}>{i + 1 >= qs.length ? 'Kết thúc' : 'Câu tiếp →'}</button>

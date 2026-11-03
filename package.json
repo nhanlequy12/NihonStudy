@@ -7,7 +7,8 @@
     "dev": "vite",
     "build": "vite build",
     "lint": "oxlint",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "data:jtest": "node scripts/scrape-jtest.mjs 1 12 && node scripts/convert-jtest.mjs out-1-12.json src/data/jtest-n2.json"
   },
   "dependencies": {
     "react": "^19.3.1",
@@ -18,6 +19,7 @@
     "@types/react": "^19.3.0",
     "@types/react-dom": "^19.3.0",
     "@vitejs/plugin-react": "^6.1.2",
+    "cheerio": "^1.2.0",
     "oxlint": "^1.89.0",
     "vite": "^8.3.5"
   }

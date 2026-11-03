@@ -221,3 +221,10 @@ input, textarea, select { font: inherit; }
 
 .fade-in { animation: fade .25s ease; }
 @keyframes fade { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: none; } }
+
+.example-kana { font-family: var(--font-jp); font-size: 13px; color: var(--primary); }
+.group-head { display: flex; align-items: center; gap: 12px; padding: 14px 16px; border-radius: var(--radius); background: var(--bg-elev); border: 1px solid var(--border); cursor: pointer; width: 100%; text-align: left; color: inherit; }
+.group-head:hover { background: var(--bg-soft); }
+.group-head .chev { margin-left: auto; color: var(--text-muted); transition: transform .2s; }
+.group-head.open .chev { transform: rotate(90deg); }
+.group-body { padding: 12px 0 4px; }

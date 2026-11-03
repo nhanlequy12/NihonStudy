@@ -1,10 +1,11 @@
 import { useState, useMemo, useEffect, useRef } from 'react'
-import { allWords, topics, topicById } from '../data/vocab'
+import { allWords, wordsFor } from '../data/vocab'
 import { readings } from '../data/reading'
 import { useStore, updateSettings, touchStreak } from '../lib/storage'
 import { speak, stopSpeaking, listenOnce, recognitionSupported } from '../lib/tts'
 import { similarity, normalizeJa, shuffle } from '../lib/utils'
 import { SaveButton } from '../components/WordCard'
+import TopicSelect from '../components/TopicSelect'
 
 /** Tô màu từng ký tự: xanh nếu có trong câu nói của người dùng. */
 function Diff({ target, spoken }) {
@@ -43,7 +44,7 @@ export default function Shadowing() {
       const r = readings.find((x) => x.id === source.slice(8))
       list = r.text.split(/(?<=。)/).map((t) => t.trim()).filter(Boolean).map((jp) => ({ jp, vi: '', w: null }))
     } else {
-      const pool = source === 'all' ? allWords : source === 'saved' ? allWords.filter((w) => s.saved.includes(w.id)) : topicById[source].words
+      const pool = source === 'saved' ? allWords.filter((w) => s.saved.includes(w.id)) : wordsFor(source)
       list = shuffle(pool).slice(0, 12).map((w) => ({ jp: w.examples[0].jp, vi: w.examples[0].vi, w }))
     }
     setItems(list); setI(0); setSpoken(null); setScores([])
@@ -97,16 +98,8 @@ export default function Shadowing() {
       {!cur ? (
         <div className="card stack">
           <div className="row">
-            <select className="select" value={source} onChange={(e) => setSource(e.target.value)}>
-              <option value="all">Câu ví dụ – tất cả chủ đề</option>
-              <option value="saved">Câu ví dụ – từ đã lưu ({s.saved.length})</option>
-              <optgroup label="Theo chủ đề">
-                {topics.map((t) => <option key={t.id} value={t.id}>{t.icon} {t.title}</option>)}
-              </optgroup>
-              <optgroup label="Bài đọc (từng câu)">
-                {readings.map((r) => <option key={r.id} value={'reading:' + r.id}>📖 {r.title}</option>)}
-              </optgroup>
-            </select>
+            <TopicSelect value={source} savedCount={s.saved.length} onChange={setSource}
+              extra={readings.map((r) => ({ value: 'reading:' + r.id, label: '📖 Bài đọc: ' + r.title }))} />
             <button className="btn btn-primary" onClick={build}>Bắt đầu →</button>
           </div>
           <div className="small muted">
@@ -136,7 +129,7 @@ export default function Shadowing() {
               {showText ? cur.jp : <span className="muted" style={{ fontSize: 16, fontWeight: 400 }}>(phụ đề đang ẩn – hãy nghe và nói theo)</span>}
             </div>
             {showVi && cur.vi && <div className="center muted">{cur.vi}</div>}
-            {cur.w && <div className="row" style={{ justifyContent: 'center' }}><span className="chip chip-primary jp">{cur.w.word}【{cur.w.reading}】 {cur.w.meaning}</span><SaveButton id={cur.w.id} /></div>}
+            {cur.w && <div className="row" style={{ justifyContent: 'center' }}><span className="chip chip-primary jp">{cur.w.word}{cur.w.reading !== cur.w.word ? `【${cur.w.reading}】` : ''} {cur.w.meaning}</span><SaveButton id={cur.w.id} /></div>}
 
             <div className="row" style={{ justifyContent: 'center', gap: 12 }}>
               <button className="btn" onClick={playSlow}>🐢 Chậm</button>

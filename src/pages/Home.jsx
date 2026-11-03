@@ -1,7 +1,7 @@
 import { Link } from 'react-router-dom'
 import { useStore } from '../lib/storage'
 import { dueCount, masteryLevel } from '../lib/srs'
-import { allWords, topics } from '../data/vocab'
+import { allWords, groups } from '../data/vocab'
 import { readings } from '../data/reading'
 import { listenings } from '../data/listening'
 
@@ -47,16 +47,17 @@ export default function Home() {
         <div className="row spread mb"><b>Tiến độ từ vựng N2</b><span className="muted small">{pct}%</span></div>
         <div className="progress"><div style={{ width: pct + '%' }} /></div>
         <div className="grid grid-3 mt">
-          {topics.map((t) => {
-            const n = t.words.filter((w) => s.srs[w.id]).length
+          {groups.map((g) => {
+            const words = g.topics.flatMap((t) => t.words)
+            const n = words.filter((w) => s.srs[w.id]).length
             return (
-              <Link key={t.id} to={`/topics/${t.id}`} className="row" style={{ gap: 10 }}>
-                <span style={{ fontSize: 20 }}>{t.icon}</span>
-                <div style={{ flex: 1 }}>
-                  <div className="small bold">{t.title}</div>
-                  <div className="progress" style={{ height: 5, marginTop: 4 }}><div style={{ width: (n / t.words.length) * 100 + '%', background: t.color }} /></div>
+              <Link key={g.id} to="/topics" className="row" style={{ gap: 10 }}>
+                <span style={{ fontSize: 20 }}>{g.icon || '📚'}</span>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div className="small bold" style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{g.title}</div>
+                  <div className="progress" style={{ height: 5, marginTop: 4 }}><div style={{ width: (n / words.length) * 100 + '%', background: g.color || 'var(--primary)' }} /></div>
                 </div>
-                <span className="tiny muted">{n}/{t.words.length}</span>
+                <span className="tiny muted">{n}/{words.length}</span>
               </Link>
             )
           })}
