@@ -72,3 +72,5 @@ export async function loadUserData(uid) {
 export async function saveUserData(uid, data) {
   await setDoc(doc(db, 'users', uid), { ...data, updatedAt: serverTimestamp(), savedAtMs: Date.now() }, { merge: false })
 }
+
+if (import.meta.env.DEV && cloudEnabled) window.__fb = { auth, db }

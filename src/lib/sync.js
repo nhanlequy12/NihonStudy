@@ -24,7 +24,7 @@ async function flush() {
   } catch (e) {
     console.warn('save failed', e)
     pending = true
-    set({ state: 'error', error: e.message })
+    set({ state: 'error', error: friendly(e) })
   }
 }
 
@@ -51,8 +51,14 @@ async function onUser(user) {
     }
   } catch (e) {
     console.warn('load failed', e)
-    set({ state: 'error', error: e.message })
+    set({ state: 'error', error: friendly(e) })
   }
+}
+
+function friendly(e) {
+  if (e?.code === 'permission-denied') return 'Firestore từ chối truy cập: hãy publish nội dung firestore.rules trong Firebase Console → Firestore → Rules.'
+  if (e?.code === 'unavailable') return 'Không kết nối được Firestore (mạng?).'
+  return e?.message || String(e)
 }
 
 let started = false
